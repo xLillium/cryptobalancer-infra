@@ -1,0 +1,42 @@
+apiVersion: apps/v1             # Version de l'API Kubernetes pour les Deployments
+kind: Deployment                # Type de ressource - gère des réplicas de pods
+metadata:
+  name: cryptobalancer-backend      # Nom unique du déploiement
+  namespace: cryptobalancer     # Namespace cible pour le déploiement
+  labels:
+    app: cryptobalancer-backend     # Étiquette pour identifier et filtrer les objets liés
+spec:
+  replicas: 2                   # Nombre de pods identiques à maintenir en parallèle
+  selector:
+    matchLabels: # Sélecteur pour identifier les pods gées par ce déploiement
+      app: cryptobalancer-backend
+  strategy:
+    type: RollingUpdate         # Stratégie de mise à jour sans interruption de service
+    rollingUpdate:
+      maxSurge: 1               # Nombre max de pods créés au-delà du nombre de replicas
+      maxUnavailable: 0         # Nombre max de pods indisponibles pendant une mise à jour
+  template:
+    metadata:
+      labels: # Étiquettes appliquées aux pods créés
+        app: cryptobalancer-backend
+    spec:
+      containers: # Liste des conteneurs à lancer dans chaque pod
+        - name: api               # Nom du conteneur
+          image: ghcr.io/xlillium/test-gh-deploy-backend:a94a8977771d8c31680f317e9a8d141264dd6aa3  # Image Docker utilisée
+          imagePullPolicy: Always # Toujours tirer l’image depuis le registre, même si elle est en cache
+          ports:
+            - containerPort: 8080   # Port exposé par l’application dans le conteneur
+          resources: # Définition des ressources CPU/mémoire
+            requests: # Ressources minimales garanties au pod
+              cpu: 100m           # 0.1 CPU (100 millicores)
+              memory: 256Mi       # 256 Mégaoctets de mémoire
+            limits: # Ressources maximales autorisées au pod
+              cpu: 500m           # 0.5 CPU
+              memory: 512Mi       # 512 Mégaoctets de mémoire
+          securityContext: # Paramètres de sécurité pour le conteneur
+            runAsNonRoot: true    # Exécute le conteneur sans les privilèges root
+            runAsUser: 1000       # UID de l’utilisateur non-root à utiliser
+            allowPrivilegeEscalation: false  # Interdit l’élévation de privilèges
+            capabilities:
+              drop: # Révoquer toutes les capacités Linux privilégiées
+                - ALL
