@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1   # Version de l'API cert-manager utilisée
+kind: ClusterIssuer             # Type de ressource - émetteur au niveau du cluster (disponible dans tous les namespaces)
+metadata:
+  name: letsencrypt-prod        # Nom de l'émetteur, référencé dans les annotations Ingress
+spec:
+  acme:                         # Spécifie l'utilisation du protocole ACME (Automatic Certificate Management Environment)
+    server: https://acme-v02.api.letsencrypt.org/directory  # URL de l'API de production Let's Encrypt
+    email: xlillium@cryptobalancer.eu  # Email pour les notifications (expiration, problèmes)
+    privateKeySecretRef:        # Référence au secret qui stockera la clé privée du compte ACME
+      name: letsencrypt-prod    # Nom du secret Kubernetes qui sera créé pour stocker la clé
+    solvers:                    # Liste des méthodes pour résoudre les challenges ACME
+      - http01:                   # Utilisation du challenge HTTP-01 (validation via HTTP)
+          ingress:               # Configuration spécifique pour la résolution via Ingress
+            class: traefik       # Utiliser le contrôleur d'ingress Traefik pour servir le challenge
