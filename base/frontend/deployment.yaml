@@ -1,0 +1,42 @@
+apiVersion: apps/v1                # Version de l'API Kubernetes pour les Deployments
+kind: Deployment                   # Type de ressource - gère des réplicas de pods
+metadata:
+  name: cryptobalancer-frontend    # Nom unique du déploiement
+  namespace: cryptobalancer        # Namespace cible pour le déploiement
+  labels:
+    app: cryptobalancer-frontend   # Étiquette pour identifier et filtrer les objets liés
+spec:
+  replicas: 2                      # Nombre de pods identiques à maintenir en parallèle
+  selector:
+    matchLabels: # Sélecteur pour identifier les pods gées par ce déploiement
+      app: cryptobalancer-frontend
+  strategy:
+    type: RollingUpdate            # Stratégie de mise à jour sans interruption de service
+    rollingUpdate:
+      maxSurge: 1                  # Nombre max de pods créés au-delà du nombre de replicas
+      maxUnavailable: 0            # Nombre max de pods indisponibles pendant une mise à jour
+  template:
+    metadata:
+      labels: # Étiquettes appliquées aux pods créés
+        app: cryptobalancer-frontend
+    spec:
+      containers: # Liste des conteneurs à lancer dans chaque pod
+        - name: frontend             # Nom du conteneur
+          image: ghcr.io/xlillium/test-gh-deploy-frontend:1589cd8aef1a5d320b3192d0689f8a53154bde12  # Image Docker utilisée
+          imagePullPolicy: Always    # Toujours tirer l’image depuis le registre, même si elle est en cache
+          ports:
+            - containerPort: 80        # Port exposé par l’application dans le conteneur
+          resources: # Définition des ressources CPU/mémoire
+            requests: # Ressources minimales garanties au pod
+              cpu: 50m               # 50 millicores (0.05 CPU)
+              memory: 128Mi          # 128 MiB de RAM
+            limits: # Ressources maximales autorisées au pod
+              cpu: 200m              # 200 millicores (0.2 CPU)
+              memory: 256Mi          # 256 MiB de RAM
+          securityContext: # Paramètres de sécurité pour le conteneur
+            runAsNonRoot: true       # Exécute le conteneur sans les privilèges root
+            runAsUser: 101           # UID de l’utilisateur à utiliser (celui de nginx dans l’image)
+            allowPrivilegeEscalation: false  # Interdit l’élévation de privilèges
+            capabilities:
+              drop:
+                - ALL                  # Révoquer toutes les capacités Linux privilégiées

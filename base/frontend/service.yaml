@@ -1,0 +1,16 @@
+apiVersion: v1                     # Version de l'API Kubernetes pour les Services
+kind: Service                      # Type de ressource - abstraction réseau pour exposer des pods
+metadata:
+  name: cryptobalancer-frontend    # Nom du service (doit correspondre à celui ciblé par l’ingress)
+  namespace: cryptobalancer        # Namespace cible
+  labels:
+    app: cryptobalancer-frontend   # Étiquette pour identifier ce service
+spec:
+  type: ClusterIP                  # Le service est accessible uniquement depuis l’intérieur du cluster
+  ports: # Configuration des ports
+    - port: 80                       # Port exposé par le service
+      targetPort: 80                 # Port cible dans les pods (où l'application écoute)
+      protocol: TCP                  # Protocole réseau utilisé
+      name: http                     # Nom du port
+  selector:
+    app: cryptobalancer-frontend   # Le service cible les pods ayant cette étiquette

@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1               # Version de l'API Kubernetes pour les Ingress
+kind: Ingress                                  # Type de ressource - règles d'exposition HTTP/HTTPS
+metadata:
+  name: cryptobalancer-frontend                # Nom de l’Ingress
+  namespace: cryptobalancer                    # Namespace cible
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"          # Référence au ClusterIssuer pour les certificats
+    kubernetes.io/ingress.class: "traefik"                      # Spécifie le contrôleur Ingress à utiliser (Traefik ici)
+    traefik.ingress.kubernetes.io/router.tls: "true"            # Activer TLS pour Traefik
+
+    # Annotations de sécurité (compatibles NGINX/Traefik)
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"            # Force la redirection HTTP vers HTTPS
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"      # Force la redirection vers HTTPS même si les headers HTTPS sont manquants
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"          # Limite la taille des requêtes à 10 Mo
+
+    # Headers HTTP de sécurité (best practices)
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";                            # Empêcher l'affichage dans un iframe
+      more_set_headers "X-Content-Type-Options: nosniff";                  # Empêcher le MIME-sniffing
+      more_set_headers "X-XSS-Protection: 1; mode=block";                  # Protection contre XSS
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin"; # Contrôle les informations du referrer HTTP
+      more_set_headers "Content-Security-Policy: default-src 'self'";      # Restreindre les sources de contenu autorisées
+
+spec:
+  tls: # Configuration TLS
+    - hosts: # Liste des hôtes couverts par le certificat
+        - cryptobalancer.eu                   # Nom de domaine pour le certificat
+      secretName: cryptobalancer-frontend-tls   # Nom du Secret Kubernetes généré par cert-manager avec le certificat TLS
+  rules: # Règles de routage
+    - host: cryptobalancer.eu              # Nom d'hôte pour cette règle
+      http:
+        paths: # Chemins a router
+          - path: /                          # Chemins racine
+            pathType: Prefix                 # Type de correspondance - préfixe (tout chemin commençant par /)
+            backend: # Destination du trafic
+              service: # Service cible dans le cluster
+                name: cryptobalancer-frontend # Nom du service
+                port:
+                  number: 80                 # Port du service cible
