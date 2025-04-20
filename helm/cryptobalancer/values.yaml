@@ -1,0 +1,115 @@
+# Global values for the CryptoBalancer platform
+global:
+  namespace: cryptobalancer
+  domain: cryptobalancer.eu
+
+# Frontend subchart values
+frontend:
+  namespace: cryptobalancer
+  replicaCount: 2
+  image:
+    repository: ghcr.io/xlillium/test-gh-deploy-frontend
+    pullPolicy: Always
+    tag: 1589cd8aef1a5d320b3192d0689f8a53154bde12
+  ingress:
+    enabled: true
+    className: "traefik"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      kubernetes.io/ingress.class: "traefik"
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - host: cryptobalancer.eu
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: cryptobalancer-frontend-tls
+        hosts:
+          - cryptobalancer.eu
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+# Backend subchart values
+backend:
+  namespace: cryptobalancer
+  replicaCount: 2
+  image:
+    repository: ghcr.io/xlillium/test-gh-deploy-backend
+    pullPolicy: Always
+    tag: a94a8977771d8c31680f317e9a8d141264dd6aa3
+  ingress:
+    enabled: true
+    className: "traefik"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      kubernetes.io/ingress.class: "traefik"
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - host: api.cryptobalancer.eu
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: cryptobalancer-backend-tls
+        hosts:
+          - api.cryptobalancer.eu
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+# Cert-manager subchart values
+cert-manager:
+  enabled: true
+  namespace: cryptobalancer
